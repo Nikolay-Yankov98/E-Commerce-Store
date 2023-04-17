@@ -1,4 +1,5 @@
-using Core.Interfaces;
+using E_Commerce_Store.Extenstions;
+using E_Commerce_Store.Middleware;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,27 +8,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-//service for the DB
-builder.Services.AddDbContext<StoreContext>(opt =>
-{
-    //the Connection string for the given DB
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConneciton"));
-});
-builder.Services.AddScoped<IProductRepository,ProductRepository>();
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
+builder.Services.AddApplicationServices(builder.Configuration);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseStatusCodePagesWithReExecute("/errors/{0}");
+
+ app.UseSwagger();
+app.UseSwaggerUI();
+
 
 app.UseStaticFiles();
 //app.UseHttpsRedirection();
