@@ -4,6 +4,7 @@ using Core.Interfaces;
 using Core.Specifications;
 using E_Commerce_Store.Dtos;
 using E_Commerce_Store.Errors;
+using E_Commerce_Store.Helpers;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,13 +29,21 @@ namespace E_Commerce_Store.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<ProductToReturnDto>>> GetProducts()
+        public async Task<ActionResult<Pagination<ProductToReturnDto>>> GetProducts([FromQuery]ProductSpecParams productParams)
         {
-            var spec = new ProductsWithTypesAndBrandsSpecification();
+            var spec = new ProductsWithTypesAndBrandsSpecification(productParams);
+
+            var countSpec = new ProductWithFiltersForCountSpecification(productParams);
+
+            var totalItems = await _productsRepo.CountAsync(countSpec);
 
             var products = await _productsRepo.ListAsync(spec);
+  
+            var data = _mapper.
+                Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products);
+           
 
-            return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList <ProductToReturnDto>>(products));
+            return Ok(new Pagination<ProductToReturnDto>(productParams.PageSize,productParams.PageIndex,totalItems,data));
         }
 
         [HttpGet("{id}")]
